@@ -82,10 +82,11 @@ To test both paths:
 
 ## 5. Network tab evidence
 
-_[Add your two screenshots here: one showing the `POST /api/orders` request/
-response for a CONFIRMED order, one for a REJECTED order — open your
-browser's DevTools → Network tab → click the `orders` request → Response
-tab, and screenshot both the request payload and response body.]_
+<img width="1917" height="1024" alt="image" src="https://github.com/user-attachments/assets/7f2ef884-6650-4b42-a692-c79bc6a45210" />
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/48913f56-51cc-4684-9846-cc0fe9ffd145" />
+
+
+
 
 ---
 
