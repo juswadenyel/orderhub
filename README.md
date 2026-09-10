@@ -97,14 +97,14 @@ would you need to add back if split?**
 Right now, `OrderService` calling `InventoryService.reserve(...)` is a
 plain Java method call inside one JVM. That gives me a few things for
 free: the call is synchronous and effectively instant, it can't fail from
-a network timeout or a DNS problem, and — most importantly — it's
+a network timeout or a DNS problem, and  most importantly  it's
 transactional. Because both the inventory update and the order write
 happen inside one Spring `@Transactional` boundary against one database,
 there's no window where stock gets decremented but the order never gets
 recorded, or vice versa. If I split Inventory into its own microservice,
 all of that has to be rebuilt by hand: I'd need a network client (REST or
 gRPC) with retries and timeouts, a way to handle Inventory being slow or
-down (circuit breaker, fallback), and — since I'd lose the single local
+down (circuit breaker, fallback), and since I'd lose the single local
 transaction — either a distributed transaction protocol or, more
 realistically, a saga: reserve stock first, then write the order, and if
 the order write fails, fire a compensating "release stock" call back to
@@ -114,7 +114,7 @@ network call could double-reserve stock if I'm not careful.
 **2. Why does package-private `InventoryServiceImpl` matter?**
 
 Marking `InventoryServiceImpl` (and `InventoryRepository`) package-private
-means the Java compiler itself enforces the module boundary — nobody
+means the Java compiler itself enforces the module boundary  nobody
 outside `edu.cit.dingding.inventory` can import, construct, or cast to
 that class, so `OrderService` is physically incapable of skipping the
 interface and poking at the repository or the entity directly. If
@@ -131,14 +131,14 @@ mistake — it would only show up in a code review, if at all.
 would change?**
 
 I'd consider extracting it once Inventory has genuinely different scaling
-or release needs than Order — for example, if inventory reads/writes
+or release needs than Order for example, if inventory reads/writes
 became a much bigger load (barcode scanners hitting it constantly) than
 order placement, or if a different team started owning it and needed to
 deploy it independently. Code-wise, `InventoryServiceImpl` would move into
 its own Spring Boot app behind a REST (or messaging) API. In the Order
 module, I'd write a new implementation of the same `InventoryService`
 interface — an `InventoryServiceClient` that makes an HTTP call instead of
-a local method call — and swap it in via Spring configuration. Because
+a local method call and swap it in via Spring configuration. Because
 `OrderService` only ever depended on the `InventoryService` interface, it
 wouldn't need to change at all; only the implementation wired in behind it
 would.
