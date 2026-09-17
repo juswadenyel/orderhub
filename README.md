@@ -109,11 +109,16 @@ request → Response tab):
    rejected-order entry, and — if any product dropped under 5 units along
    the way — a "Reorder needed" entry.
 
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/b118fb65-e736-425f-b850-439690be80c1" />
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/9ac9a41c-a228-4ea0-80e7-6d2a29a9a8dc" />
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/ce001761-c685-4ba5-977c-4c25be5c8345" />
-<img width="1910" height="1077" alt="image" src="https://github.com/user-attachments/assets/0d7a6ce6-5b54-428f-964f-dc5ac53a83c2" />
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/70767a64-0aae-46e6-9715-2aa7e30fc00c" />
+<img width="1919" height="1033" alt="image" src="https://github.com/user-attachments/assets/b24019e5-e833-4606-89b0-3bc7ed0f357c" />
+<img width="1918" height="1027" alt="image" src="https://github.com/user-attachments/assets/31db9e78-0b21-4f8d-a29f-76c8eab39c42" />
+<img width="1919" height="1031" alt="image" src="https://github.com/user-attachments/assets/9fa4de5e-e7df-4328-ae9a-db1ec44c4470" />
+<img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/ec59a10e-12d4-405a-b929-6225ae50a33b" />
+<img width="1919" height="1031" alt="image" src="https://github.com/user-attachments/assets/66621fea-8513-401d-bf7e-feffc939df54" />
+
+
+
+
+
 
 
 
