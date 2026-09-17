@@ -109,7 +109,16 @@ request → Response tab):
    rejected-order entry, and — if any product dropped under 5 units along
    the way — a "Reorder needed" entry.
 
-_[Paste your screenshots for all four scenarios here.]_
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/b118fb65-e736-425f-b850-439690be80c1" />
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/9ac9a41c-a228-4ea0-80e7-6d2a29a9a8dc" />
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/ce001761-c685-4ba5-977c-4c25be5c8345" />
+<img width="1910" height="1077" alt="image" src="https://github.com/user-attachments/assets/0d7a6ce6-5b54-428f-964f-dc5ac53a83c2" />
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/70767a64-0aae-46e6-9715-2aa7e30fc00c" />
+
+
+
+
+
 
 ---
 
