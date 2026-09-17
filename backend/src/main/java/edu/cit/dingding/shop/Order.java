@@ -11,6 +11,10 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
+/**
+ * An order is now just a header row — WHAT the individual products/quantities
+ * were lives in OrderItem, since Lab 2 allows more than one per order.
+ */
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -19,12 +23,6 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
     private Long orderId;
-
-    @Column(name = "product_id")
-    private String productId;
-
-    @Column(name = "quantity")
-    private int quantity;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -40,9 +38,7 @@ public class Order {
         // required by JPA
     }
 
-    public Order(String productId, int quantity, OrderStatus status, String reason) {
-        this.productId = productId;
-        this.quantity = quantity;
+    public Order(OrderStatus status, String reason) {
         this.status = status;
         this.reason = reason;
         this.createdAt = Instant.now();
@@ -52,16 +48,12 @@ public class Order {
         return orderId;
     }
 
-    public String getProductId() {
-        return productId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
     public OrderStatus getStatus() {
         return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
     }
 
     public String getReason() {

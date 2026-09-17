@@ -1,15 +1,26 @@
 package edu.cit.dingding.shop.dto;
 
+import java.util.List;
+
 public class OrderResponseDto {
 
+    private final Long orderId;
     private final String status;
     private final String reason;
-    private final InventorySnapshotDto inventory;
+    private final List<OrderItemResultDto> items;
+    private final List<InventorySnapshotDto> inventory;
 
-    public OrderResponseDto(String status, String reason, InventorySnapshotDto inventory) {
+    public OrderResponseDto(Long orderId, String status, String reason,
+                             List<OrderItemResultDto> items, List<InventorySnapshotDto> inventory) {
+        this.orderId = orderId;
         this.status = status;
         this.reason = reason;
+        this.items = items;
         this.inventory = inventory;
+    }
+
+    public Long getOrderId() {
+        return orderId;
     }
 
     public String getStatus() {
@@ -20,7 +31,11 @@ public class OrderResponseDto {
         return reason;
     }
 
-    public InventorySnapshotDto getInventory() {
+    public List<OrderItemResultDto> getItems() {
+        return items;
+    }
+
+    public List<InventorySnapshotDto> getInventory() {
         return inventory;
     }
 }
