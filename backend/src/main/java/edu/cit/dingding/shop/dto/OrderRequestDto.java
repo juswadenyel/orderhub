@@ -1,32 +1,24 @@
 package edu.cit.dingding.shop.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+
+import java.util.List;
 
 public class OrderRequestDto {
 
-    @NotBlank
-    private String productId;
-
-    @Min(1)
-    private int quantity;
+    @NotEmpty
+    @Valid
+    private List<OrderLineItemDto> items;
 
     public OrderRequestDto() {
     }
 
-    public String getProductId() {
-        return productId;
+    public List<OrderLineItemDto> getItems() {
+        return items;
     }
 
-    public void setProductId(String productId) {
-        this.productId = productId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
+    public void setItems(List<OrderLineItemDto> items) {
+        this.items = items;
     }
 }
