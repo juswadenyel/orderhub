@@ -1,5 +1,6 @@
 package edu.cit.dingding.inventory;
 
+import edu.cit.dingding.inventory.events.InventoryStockChangedEvent;
 import edu.cit.dingding.inventory.events.LowStockEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -11,10 +12,6 @@ import java.util.List;
 @Service
 class InventoryServiceImpl implements InventoryService {
 
-    // Below this many units remaining, we consider a product low stock and
-    // fire an event for the Notification module to log. A simple constant
-    // is enough for this lab — a real system would likely make this
-    // per-product and configurable via the database.
     private static final int LOW_STOCK_THRESHOLD = 5;
 
     private final InventoryRepository inventoryRepository;
@@ -33,8 +30,16 @@ class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
+    public InventoryItem lockItem(String productId) {
+        return inventoryRepository.findLockedByProductId(productId)
+                .orElseThrow(() -> new InventoryItemNotFoundException(productId));
+    }
+
+    @Override
+    @Transactional
     public boolean reserve(String productId, int quantity) {
-        InventoryItem item = getItem(productId);
+        InventoryItem item = inventoryRepository.findLockedByProductId(productId)
+            .orElseThrow(() -> new InventoryItemNotFoundException(productId));
 
         if (quantity > item.getStock()) {
             return false;
@@ -42,6 +47,8 @@ class InventoryServiceImpl implements InventoryService {
 
         item.setStock(item.getStock() - quantity);
         inventoryRepository.save(item);
+
+        eventPublisher.publishEvent(new InventoryStockChangedEvent(item.getProductId(), item.getStock()));
 
         if (item.getStock() < LOW_STOCK_THRESHOLD) {
             eventPublisher.publishEvent(new LowStockEvent(item.getProductId(), item.getName(), item.getStock()));
@@ -53,9 +60,12 @@ class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional
     public void restock(String productId, int quantity) {
-        InventoryItem item = getItem(productId);
+        InventoryItem item = inventoryRepository.findLockedByProductId(productId)
+            .orElseThrow(() -> new InventoryItemNotFoundException(productId));
         item.setStock(item.getStock() + quantity);
         inventoryRepository.save(item);
+
+        eventPublisher.publishEvent(new InventoryStockChangedEvent(item.getProductId(), item.getStock()));
     }
 
     @Override

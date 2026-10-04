@@ -182,3 +182,77 @@ service subscribe to that topic. Because the event classes were already
 isolated in their own `events` sub-packages and Order/Inventory never
 depended on Notification's internals, this split touches almost nothing in the
 other two modules — just where the event goes after `publishEvent()` runs.
+
+---
+
+## Lab 3: LegacySupply Anti-Corruption Layer (rebuilt)
+
+`edu.cit.dingding.supplier` — same design as before: `SupplierGateway` is
+the only public door (now with `hasOpenPurchaseOrder()` added for Lab 4's
+backorder logic), everything LegacySupply-shaped is package-private, no
+new pom.xml dependency (plain `java.net.http` + the JDK's XML parser).
+Full contract notes are in `INTEGRATION.md`.
+
+## Lab 4: Tiangge marketplace channel
+
+`edu.cit.dingding.channel` — a new module that polls Tiangge's order feed
+and drives the SAME `OrderService`/`InventoryService` the React UI uses.
+Order and Inventory have zero imports from this package.
+
+**Flow, end to end:**
+1. `StartupChannelInitializer` sends the first heartbeat, publishes
+   listings, then publishes current stock — in that exact order, at boot.
+2. `HeartbeatScheduler` keeps sending one every 30s after that.
+3. `FeedPoller` polls `GET /feed` every 5s. For each new `eventId`
+   (deduped against `channel_events`), it either creates a real order via
+   `OrderService.placeOrder(items, allowBackorder=true)` or cancels one via
+   `OrderService.cancelOrder(...)` — then reports the outcome back to
+   Tiangge. The Tiangge order ID is only ever stored in
+   `channel_order_mappings`; Order/Inventory never see it.
+4. `StockSyncListener` listens for `InventoryStockChangedEvent` — a new
+   event `InventoryServiceImpl` publishes after **every** stock mutation,
+   from any source — and immediately pushes the new number to Tiangge.
+   Event-driven, never on a timer, so this also covers React-UI orders and
+   cancellations, not just Tiangge ones.
+5. Backorders: `OrderService.placeOrder(items, true)` checks
+   `SupplierGateway.hasOpenPurchaseOrder(productId)` for every short item
+   before deciding REJECTED vs BACKORDERED. When a delivery lands,
+   `BackorderResolutionListener` (in shop) re-checks every BACKORDERED
+   order and confirms or cancels it, publishing
+   `OrderBackorderResolvedEvent`; `BackorderResolutionNotifier` (in
+   channel) is what actually tells Tiangge.
+
+### Setup
+
+1. Fill in `application-local.properties`: `tiangge.client-id`/`api-key`
+   (same key as LegacySupply, per the manual) and the three
+   `tiangge.listing.P1__=sellerSku:title:supplierSku` lines — keep the
+   `supplierSku` consistent with your `legacysupply.mapping.*` entries.
+2. **Double-check `tiangge.base-url`** in `application.properties` — the
+   manual's "Getting started" section shows the path pattern
+   (`https://…/tiangge/v1`) but redacts the exact host. I've set it to
+   `https://legacysupply.onrender.com/tiangge/v1` by inference from the
+   docs URL pattern — confirm this actually resolves with a single Postman
+   `GET` **before your app goes live** (Stage 0 explicitly allows this).
+3. Re-run `sql/supabase_schema.sql` (adds `channel_events`,
+   `channel_order_mappings`, `channel_cursor`, and the previously-missing
+   `supplier_orders`).
+4. `mvn spring-boot:run`. Watch the console for `[channel] First heartbeat
+   sent` and `Shop should now be live on Tiangge` — that's Task 1 + 2 done.
+
+### On running this for the actual grading stages
+
+- **The app must keep running continuously** between going live and your
+  hands-off test — Stage 1's proof is "online for at least 80% of the
+  time." Don't stop/restart it except deliberately for the Stage 4 restart
+  test.
+- **Only this app may call Tiangge/LegacySupply** — don't use Postman
+  against either once you're live; the rules say those calls count against
+  you, and the self-check page is reading server-side traffic, not
+  anything you can fake from outside your app.
+- **Stage 4 (restart test)**: stop the app, wait over a minute, start it
+  again, and don't touch anything else — `channel_cursor` and
+  `channel_events` are what make it resume instead of reprocessing.
+- **Stage 5 (hands-off, 10 minutes, worth the most points)**: only press
+  "Start hands-off test" once Stages 1–4 are all green on the self-check
+  page — you get at most two attempts.

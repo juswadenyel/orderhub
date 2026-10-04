@@ -6,6 +6,9 @@ public interface InventoryService {
 
     InventoryItem getItem(String productId);
 
+    /** Acquires a write lock; call inside a transaction before checking/reserving stock. */
+    InventoryItem lockItem(String productId);
+
     boolean reserve(String productId, int quantity);
 
     /**
