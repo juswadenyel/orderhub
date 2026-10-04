@@ -129,43 +129,14 @@ request → Response tab):
 
 ## Reflection
 
-**1. What keeps multi-item orders atomic in-process, and what would you
-need to add if Order and Inventory were split across a network?**
+ 1. Duplicate BuyerRef RO-3
 
-Right now, atomicity comes from two things stacking together: validating
-every line item against current stock *before* reserving anything, and
-wrapping the whole `placeOrder` method in one `@Transactional` boundary
-against a single database. Because the validation loop runs first and
-`reserve()` is only ever called once every line has already passed, there's
-no scenario where three items get reserved and a fourth fails halfway
-through — the "failure" already happened during validation, before any
-write occurred. If Order and Inventory were split into separate services,
-I'd lose both guarantees. The validate-then-commit pattern would still work
-in spirit, but a "validated" stock level could go stale before the real
-reservation call arrives, if another order grabs that stock in between.
-I'd need either a two-phase hold-then-commit approach with a timeout that
-releases stale holds, or a saga:
-reserve items one at a time and, if a later item in the same order fails,
-fire compensating "release" calls back to Inventory for every item already
-reserved. Either way, "all-or-nothing" stops being free — it becomes code I
-have to write and test myself.
+LegacySupply has two orders for RO-3: PO-103135 at 19:41:29 and PO-100179 at 20:31:41. The first POST received a 503 even though the supplier created PO-103135. The record proves the duplicate BuyerRef and the uncertain response, but does not include enough of the request history to identify which later code path created PO-100179. The risk in the original adapter was real: a failed BuyerRef lookup fell through to another POST, and repeated low stock events could also make separate reorder requests. `SupplierGatewayImpl.reorder` now returns an existing open order for that product, and `SupplierOrderScheduler` defers a retry whenever BuyerRef lookup fails; it does not POST until it has established the earlier request was not created.
 
-**2. How does publishing an event change the coupling between OrderService
-and Notification, and what would a real microservice split need?**
+2. The 503 for PO-103135
 
-`OrderService` doesn't know Notification exists — it publishes a plain
-`OrderPlacedEvent`/`OrderRejectedEvent` object and moves on; whether zero
-listeners or five are subscribed doesn't change a line of its code. That's
-a big drop in coupling compared to Lab 1's Order→Inventory relationship,
-where Order explicitly holds and calls an `InventoryService` reference. The
-catch is that in-process `ApplicationEventPublisher` delivery is
-synchronous and only reliable within one JVM — if Notification became its
-own microservice, "publish an event" would need to become "publish to a
-message broker" (Kafka, RabbitMQ, SQS), and I'd need to actually think
-about delivery guarantees: at-least-once delivery with an idempotent
-consumer (so a retried message doesn't double-log), a dead-letter queue for
-messages Notification can't process, and ordering, which a broker doesn't
-guarantee for free the way one JVM thread does.
+The placement request used BuyerRef RO-3 and X-Request-Id `c37bf927-9148-47a8-b949-d561cbf720c1`. LegacySupply returned 503 after creating PO-103135, so the adapter treated the result as transient and retained the local purchase order as pending. On later retry, the scheduler searches LegacySupply by the same BuyerRef and adopts the existing PO number and status; if that search itself fails, the updated code waits for the next polling tick instead of placing another order. The stable request ID also makes retries of the same POST recognizable to LegacySupply's idempotency handling.
+
 
 **3. Which one module would you extract first, and what changes?**
 
@@ -185,13 +156,9 @@ other two modules — just where the event goes after `publishEvent()` runs.
 
 ---
 
-## Lab 3: LegacySupply Anti-Corruption Layer (rebuilt)
+## 3. Backorder TG-MGKGVW and PO-103134
 
-`edu.cit.dingding.supplier` — same design as before: `SupplierGateway` is
-the only public door (now with `hasOpenPurchaseOrder()` added for Lab 4's
-backorder logic), everything LegacySupply-shaped is package-private, no
-new pom.xml dependency (plain `java.net.http` + the JDK's XML parser).
-Full contract notes are in `INTEGRATION.md`.
+FeedPoller mapped the Tiangge order lines and OrderService recorded TG-MGKGVW as BACKORDERED because P-1002 did not have enough stock but had an open supplier purchase order. SupplierOrderScheduler polled PO-103134 until LegacySupply reported status 40, then emitted `SupplierOrderDeliveredEvent` with the product, delivered units, and PO number. InventoryReplenishmentListener added those units to P-1002, and BackorderResolutionListener rechecked all lines of each affected backorder. Once all lines were available it reserved them and emitted the resolution event that let FeedPoller notify Tiangge that the order was accepted.
 
 ## Lab 4: Tiangge marketplace channel
 
